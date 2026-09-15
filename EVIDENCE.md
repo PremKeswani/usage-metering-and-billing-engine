@@ -32,3 +32,25 @@ Body: {"detail":{"reason":"quota_exceeded","limit":1000,"current_usage":1001,
 
 This confirms: current_usage + requested_quantity <= limit is enforced correctly,
 and requests beyond the limit are rejected with a clear, machine-readable message.
+
+## Stripe Webhook Proof
+
+Since Stripe account creation is not available in Pakistan, webhook handling was tested
+using locally-generated, correctly-signed test events matching Stripe's exact event schema
+and signature scheme (HMAC-SHA256, same as stripe.Webhook.construct_event).
+
+Test 1 - Valid checkout.session.completed event:
+Status: 200
+Body: {"status":"ok","event_type":"checkout.session.completed"}
+Database confirms tenant 1 flipped from Free (plan_id 1) to Pro (plan_id 2), status active,
+with stripe_customer_id and stripe_subscription_id correctly stored.
+
+Test 2 - Replayed the SAME event again (testing deduplication):
+Status: 200
+Body: {"status":"ignored","reason":"duplicate event"}
+Confirms the event was processed only once.
+
+Test 3 - Forged signature:
+Status: 400
+Body: {"detail":"Invalid signature"}
+Confirms signature verification rejects tampered/forged requests.

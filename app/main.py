@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-
+from app.webhooks import router as webhook_router
 from app.database import Base, engine, get_db
 from app import models
 from app.meter_service import record_usage
@@ -10,6 +10,7 @@ from app.quota_service import check_quota
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+app.include_router(webhook_router)
 
 @app.get("/health")
 def health():
