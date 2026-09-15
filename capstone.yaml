@@ -1,0 +1,20 @@
+run: uvicorn app.main:app --reload --port 8000
+seed: python -m app.seed
+test: python -m app.test_pricing
+base_url: http://127.0.0.1:8000
+endpoints:
+  - method: POST
+    path: /generate
+    description: Record a billable usage event (idempotent)
+  - method: GET
+    path: /usage
+    description: Get usage, limits, and cost for a tenant (query param tenant_id)
+  - method: POST
+    path: /checkout
+    description: Create a Stripe Checkout session
+  - method: POST
+    path: /webhooks/stripe
+    description: Stripe webhook handler (signature verified, deduplicated)
+  - method: GET
+    path: /health
+    description: Health check
