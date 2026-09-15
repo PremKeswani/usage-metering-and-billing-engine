@@ -33,8 +33,9 @@ Layers: routes (HTTP) -> services (business logic) -> db (models/queries)
    pip install -r requirements.txt
 3. Copy .env.example to .env and fill in values
 4. Start Postgres: docker compose up -d
-5. Run the app: uvicorn app.main:app --reload --port 8000
-6. Seed initial data: python -m app.seed
+5. Run the app once to create tables: uvicorn app.main:app --reload --port 8000
+6. In a new terminal, seed initial data: python -m app.seed
+7. The app should now be running and ready to use
 
 ## Endpoints
 
