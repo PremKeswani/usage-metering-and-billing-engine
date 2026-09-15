@@ -54,3 +54,16 @@ Test 3 - Forged signature:
 Status: 400
 Body: {"detail":"Invalid signature"}
 Confirms signature verification rejects tampered/forged requests.
+
+## GET /usage Proof
+
+After tenant 1 was upgraded to Pro via the webhook test above:
+
+GET /usage?tenant_id=1
+Response:
+{"tenant_id":1,"plan":"pro","api_calls":{"used":1001,"limit":20000,"remaining":18999},
+"ai_tokens":{"used":0,"limit":5000000,"remaining":5000000}}
+
+Confirms: plan correctly shows "pro" (updated via webhook), limits match the Pro plan
+(20000 api_calls, 5000000 tokens), and used count (1001) correctly reflects the earlier
+boundary test's usage events.

@@ -5,7 +5,7 @@ from app.webhooks import router as webhook_router
 from app.database import Base, engine, get_db
 from app import models
 from app.meter_service import record_usage
-from app.quota_service import check_quota
+from app.quota_service import check_quota, get_current_plan, get_usage_this_month
 
 Base.metadata.create_all(bind=engine)
 
@@ -69,4 +69,28 @@ def generate(payload: GenerateRequest, db: Session = Depends(get_db)):
         "event_id": event.id,
         "current_usage": current_usage + payload.quantity,
         "limit": limit
+    }
+
+@app.get("/usage")
+def get_usage(tenant_id: int, db: Session = Depends(get_db)):
+    plan = get_current_plan(db, tenant_id)
+    if not plan:
+        raise HTTPException(status_code=404, detail="Tenant or plan not found")
+
+    api_used = get_usage_this_month(db, tenant_id, "api_call")
+    tokens_used = get_usage_this_month(db, tenant_id, "ai_tokens")
+
+    return {
+        "tenant_id": tenant_id,
+        "plan": plan.name,
+        "api_calls": {
+            "used": api_used,
+            "limit": plan.api_call_limit,
+            "remaining": max(plan.api_call_limit - api_used, 0)
+        },
+        "ai_tokens": {
+            "used": tokens_used,
+            "limit": plan.token_limit,
+            "remaining": max(plan.token_limit - tokens_used, 0)
+        }
     }
