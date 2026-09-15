@@ -6,6 +6,7 @@ from app.database import Base, engine, get_db
 from app import models
 from app.meter_service import record_usage
 from app.quota_service import check_quota, get_current_plan, get_usage_this_month
+from app.pricing import calculate_api_call_cost
 
 Base.metadata.create_all(bind=engine)
 
@@ -80,6 +81,15 @@ def get_usage(tenant_id: int, db: Session = Depends(get_db)):
     api_used = get_usage_this_month(db, tenant_id, "api_call")
     tokens_used = get_usage_this_month(db, tenant_id, "ai_tokens")
 
+    api_cost_cents = calculate_api_call_cost(api_used)
+    # Note: token cost breakdown (cached/reasoning) requires richer usage_event data;
+    # for the core rollup we treat all metered tokens as standard output tokens.
+    from app.pricing import calculate_token_cost
+    token_cost_cents = calculate_token_cost(
+        input_tokens=0, cached_input_tokens=0,
+        output_tokens=tokens_used, reasoning_tokens=0
+    )
+
     return {
         "tenant_id": tenant_id,
         "plan": plan.name,
@@ -92,5 +102,6 @@ def get_usage(tenant_id: int, db: Session = Depends(get_db)):
             "used": tokens_used,
             "limit": plan.token_limit,
             "remaining": max(plan.token_limit - tokens_used, 0)
-        }
+        },
+        "cost_cents": api_cost_cents + token_cost_cents
     }

@@ -67,3 +67,24 @@ Response:
 Confirms: plan correctly shows "pro" (updated via webhook), limits match the Pro plan
 (20000 api_calls, 5000000 tokens), and used count (1001) correctly reflects the earlier
 boundary test's usage events.
+
+## Pricing Calculation Proof
+
+Pricing constants pinned in app/pricing.py. Verified via app/test_pricing.py:
+
+1000 API calls -> 50 cents (expected 50) [PASS]
+1000 fresh input + 1000 output -> 75 cents (expected 75) [PASS]
+1000 fresh input -> 15 cents, 1000 cached input -> 3 cents (cached is cheaper) [PASS]
+1000 output -> 60 cents, 1000 reasoning -> 60 cents (reasoning priced as output) [PASS]
+
+All pricing tests passed.
+
+## GET /usage Cost Rollup Proof
+
+GET /usage?tenant_id=1
+Response:
+{"tenant_id":1,"plan":"pro","api_calls":{"used":1001,"limit":20000,"remaining":18999},
+"ai_tokens":{"used":0,"limit":5000000,"remaining":5000000},"cost_cents":50}
+
+Confirms cost_cents matches the pinned pricing constant: 1001 api_calls * 50 cents/1000 = 50.05,
+rounded to 50 cents. Matches app/test_pricing.py output for the same rate.
