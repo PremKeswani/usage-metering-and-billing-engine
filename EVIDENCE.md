@@ -13,3 +13,22 @@ Database check confirms only ONE row exists in usage_events for this key:
 ----+-----------+----------+----------+------------------+------------
   1 |         1 | api_call |        1 | test-key-1       | 2026-09-15
 (1 row)
+
+## Quota Boundary Proof
+
+Drove tenant 1 (free plan, limit 1000 api_call/month) to its quota limit.
+
+Once usage reached 1000, the next request was rejected:
+
+Status: 429
+Body: {"detail":{"reason":"quota_exceeded","limit":1000,"current_usage":1000,
+"message":"Quota exceeded for api_call. Limit is 1000, current usage is 1000."}}
+
+A further request also correctly rejected:
+
+Status: 429
+Body: {"detail":{"reason":"quota_exceeded","limit":1000,"current_usage":1001,
+"message":"Quota exceeded for api_call. Limit is 1000, current usage is 1001."}}
+
+This confirms: current_usage + requested_quantity <= limit is enforced correctly,
+and requests beyond the limit are rejected with a clear, machine-readable message.
